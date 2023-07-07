@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Square Chat</title>
+    <style>
+        #localVideo,
+        #remoteVideo {
+            width: 320px;
+            height: 240px;
+            border: 1px solid black;
+        }
+    </style>
+</head>
+<body>
+    <h1>Square Chat</h1>
+    <video id="localVideo" autoplay muted></video>
+    <video id="remoteVideo" autoplay></video>
+
+    <script>
+        // Get access to the camera and microphone
+        navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+            .then(function(stream) {
+                var localVideo = document.getElementById('localVideo');
+                localVideo.srcObject = stream;
+            })
+            .catch(function(err) {
+                console.log('An error occurred: ' + err);
+            });
+
+        // Create a PeerConnection object
+        var configuration = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+        var pc = new RTCPeerConnection(configuration);
+
+        // Add the local stream to the PeerConnection
+        var localStream = null;
+        pc.addEventListener('track', function(evt) {
+            if (evt.track.kind === 'video') {
+                var remoteVideo = document.getElementById('remoteVideo');
+                remoteVideo.srcObject = evt.streams[0];
+            }
+        });
+
+        // Function to send SDP offer or answer to the remote peer
+        function sendSDP(description) {
+            pc.setLocalDescription(description)
+                .then(function() {
+                    // Send the local description to the remote peer using a signaling server
+                    // Here you would implement the signaling mechanism (WebSocket, etc.) to exchange SDP information
+                })
+                .catch(function(err) {
+                    console.log('Failed to set local description: ' + err);
+                });
+        }
+
+        // Function to handle ICE candidates received from the remote peer
+        function handleICECandidate(candidate) {
+            pc.addIceCandidate(candidate)
+                .then(function() {
+                    console.log('ICE candidate added successfully');
+                })
+                .catch(function(err) {
+                    console.log('Failed to add ICE candidate: ' + err);
+                });
+        }
+
+        // Function to handle SDP offer from the remote peer
+        function handleSDPOffer(offer) {
+            pc.setRemoteDescription(offer)
+                .then(function() {
+                    // Create an SDP answer
+                    pc.createAnswer()
+                        .then(function(answer) {
+                            sendSDP(answer);
+                        })
+                        .catch(function(err) {
+                            console.log('Failed to create SDP answer: ' + err);
+                        });
+                })
+                .catch(function(err) {
+                    console.log('Failed to set remote description: ' + err);
+                });
+        }
+
+        // Function to handle SDP answer from the remote peer
+        function handleSDPAnswer(answer) {
+            pc.setRemoteDescription(answer)
+                .then(function() {
+                    console.log('Remote description set successfully');
+                })
+                .catch(function(err) {
+                    console.log('Failed to set remote description: ' + err);
+                });
+        }
+
+        // Event listener to handle ICE candidates received from the remote peer
+        // Here you would implement the signaling mechanism to receive ICE candidates from the remote peer
+        // and call the handleICECandidate function with the received candidate
+
+        // Event listener to handle SDP offer received from the remote peer
+        // Here you would implement the signaling mechanism to receive SDP offers from the remote peer
+        // and call the handleSDPOffer function with the received offer
+
+        // Event listener to handle SDP answer received from the remote peer
+        // Here you would implement the signaling mechanism to receive SDP answers from the remote peer
+        // and call the handleSDPAnswer function with the received answer
+    </script>
+</body>
+</html>
